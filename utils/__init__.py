@@ -33,7 +33,7 @@ from .constants import (
     STEPS_OPTIONS,
     OCTAVE_RANGE_OPTIONS,
     GREYSCALE_NORMALIZATION_CONST,
-    PREFILL
+    PREFILL,
 )
 
 from .audio_utils import (
@@ -50,7 +50,7 @@ from .audio_utils import (
 
 from .general_utils import normalize_minmax, ms_to_datetime
 
-__all__ = [ # allows for import * :) we do not use it in this proj, bur since I already show you how to write __init__.py we can learn this too
+__all__ = [  # allows for import * :) we do not use it in this proj, bur since I already show you how to write __init__.py we can learn this too
     "SEMITONES_NO",
     "FS",
     "C3",
@@ -96,5 +96,5 @@ __all__ = [ # allows for import * :) we do not use it in this proj, bur since I 
     "STEPS_OPTIONS",
     "OCTAVE_RANGE_OPTIONS",
     "GREYSCALE_NORMALIZATION_CONST",
-    "PREFILL"
+    "PREFILL",
 ]

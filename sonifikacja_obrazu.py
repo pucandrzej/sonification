@@ -113,7 +113,7 @@ class SonifikacjaObrazu:
         self._ui_refresh()
 
     def _ui_refresh(self):
-        if hasattr(self, "_plot_bg"):   # guard: image may not be loaded yet
+        if hasattr(self, "_plot_bg"):  # guard: image may not be loaded yet
             self._update_playhead()
         self.root.after(5, self._ui_refresh)
 
@@ -382,19 +382,25 @@ class SonifikacjaObrazu:
         self.ax.clear()
         if self.image_pixels is not None:
             self.ax.imshow(
-                self.image_pixels, aspect="auto", origin="lower",
-                cmap="gray", vmin=0, vmax=1,
+                self.image_pixels,
+                aspect="auto",
+                origin="lower",
+                cmap="gray",
+                vmin=0,
+                vmax=1,
             )
             for y in range(self.image_pixels.shape[0]):
                 self.ax.axhline(y - 0.5, linewidth=0.3)
         self.ax.set(
             title="Obraz jako spektrogram",
-            xlabel="krok (czas)", ylabel="rząd (wysokość dźwięku)",
+            xlabel="krok (czas)",
+            ylabel="rząd (wysokość dźwięku)",
         )
         self.canvas.draw()
         self._plot_bg = self.canvas.copy_from_bbox(self.ax.bbox)
-        self._vline = self.ax.axvline(self.playing_index, color="red",
-                                    linestyle="--", animated=True)
+        self._vline = self.ax.axvline(
+            self.playing_index, color="red", linestyle="--", animated=True
+        )
 
     def update_plot(self):
         """Alias so external callers (_load_image, _on_param_change) trigger a full rebuild."""

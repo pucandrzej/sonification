@@ -155,9 +155,9 @@ class SonifikacjaNotowan:
             var.trace_add("write", lambda *_: self._build_plot())
 
         self._build_ui()
-        self._build_plot()          # replaces update_plot() at end of __init__
-        self._ui_refresh()          # start the blit loop
-        
+        self._build_plot()  # replaces update_plot() at end of __init__
+        self._ui_refresh()  # start the blit loop
+
     def _ui_refresh(self):
         """Scheduled playhead refresh, only blits the line."""
         self._update_playhead()
@@ -313,17 +313,23 @@ class SonifikacjaNotowan:
         self.canvas = FigureCanvasTkAgg(self.fig, master=plot_frame)
         self.canvas.mpl_connect("resize_event", lambda e: self._build_plot())
         self.canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
-        
+
     def _build_plot(self):
         """Draw static plot content and save the background for blitting."""
         self.ax.clear()
         active = [n for n in self.names if self.track_enabled[n].get()]
         for name in active:
-            key = "normalized" if self.mode_var.get() == "kurs" else "normalized_derivative"
+            key = (
+                "normalized"
+                if self.mode_var.get() == "kurs"
+                else "normalized_derivative"
+            )
             self.ax.plot(np.asarray(self.data[name][key], float), label=name)
         self.ax.set(
             title="Aktywne przebiegi danych i aktualna pozycja",
-            xlabel="krok", ylabel="wartość znormalizowana", ylim=PLOT_YLIM,
+            xlabel="krok",
+            ylabel="wartość znormalizowana",
+            ylim=PLOT_YLIM,
         )
         if active:
             self.ax.legend(loc="upper right")
@@ -338,7 +344,7 @@ class SonifikacjaNotowan:
     def update_plot(self):
         """Rebuild static content — call when data/scale/enabled tracks change."""
         self._build_plot()
-        
+
     def _update_playhead(self):
         """
         Blit-update only the vertical playhead line.
