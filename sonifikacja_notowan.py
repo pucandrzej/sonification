@@ -1,3 +1,5 @@
+# CZY SŁYCHAĆ CZASAMI "KLIKANIE"? WYNIKA ONO NAJPEWNIEJ Z NIECIĄGŁOŚCI - MOŻNA DODAĆ FADE IN / FADE OUT ŻEBY GO UNIKNĄĆ
+
 """
 Sonifikacja notowań — real-time market data sonification
 =========================================================
@@ -150,10 +152,16 @@ class SonifikacjaNotowan:
 
         # these vars also need to refresh the plot even when stopped
         for var in [self.mode_var, *self.track_enabled.values()]:
-            var.trace_add("write", lambda *_: self.update_plot())
+            var.trace_add("write", lambda *_: self._build_plot())
 
         self._build_ui()
-        self.update_plot()
+        self._build_plot()          # replaces update_plot() at end of __init__
+        self._ui_refresh()          # start the blit loop
+        
+    def _ui_refresh(self):
+        """Scheduled playhead refresh, only blits the line."""
+        self._update_playhead()
+        self.root.after(5, self._ui_refresh)
 
     def get_step(self, idx) -> tuple:
         """Return (name, freq, amp) for each active track at data index idx."""
@@ -303,35 +311,45 @@ class SonifikacjaNotowan:
         self.fig = Figure(figsize=(9, 5), dpi=100)
         self.ax = self.fig.add_subplot(111)
         self.canvas = FigureCanvasTkAgg(self.fig, master=plot_frame)
+        self.canvas.mpl_connect("resize_event", lambda e: self._build_plot())
         self.canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
-
-    def update_plot(self):
-        """
-        Redraw the matplotlib axes with current data and player position.
-
-        Uses playing_index (not the enqueue-ahead index) so the vertical line
-        matches what is actually audible.  draw_idle() defers the render to
-        the next idle cycle, avoiding redundant redraws if called rapidly.
-        """
+        
+    def _build_plot(self):
+        """Draw static plot content and save the background for blitting."""
         self.ax.clear()
         active = [n for n in self.names if self.track_enabled[n].get()]
         for name in active:
-            key = (
-                "normalized"
-                if self.mode_var.get() == "kurs"
-                else "normalized_derivative"
-            )
+            key = "normalized" if self.mode_var.get() == "kurs" else "normalized_derivative"
             self.ax.plot(np.asarray(self.data[name][key], float), label=name)
-        self.ax.axvline(self.playing_index, linestyle="--")
         self.ax.set(
             title="Aktywne przebiegi danych i aktualna pozycja",
-            xlabel="krok",
-            ylabel="wartość znormalizowana",
-            ylim=PLOT_YLIM,
+            xlabel="krok", ylabel="wartość znormalizowana", ylim=PLOT_YLIM,
         )
         if active:
             self.ax.legend(loc="upper right")
-        self.canvas.draw_idle()
+
+        # draw once to initialise the renderer
+        self.canvas.draw()
+        self._plot_bg = self.canvas.copy_from_bbox(self.ax.bbox)
+
+        # create the line artist (starts at 0, will be moved cheaply)
+        self._vline = self.ax.axvline(self.playing_index, linestyle="--", color="C0")
+
+    def update_plot(self):
+        """Rebuild static content — call when data/scale/enabled tracks change."""
+        self._build_plot()
+        
+    def _update_playhead(self):
+        """
+        Blit-update only the vertical playhead line.
+
+        Restores the saved background, moves the line, and blits just the axes
+        region — no full figure redraw, fast enough to call every ~16 ms (60 fps).
+        """
+        self.canvas.restore_region(self._plot_bg)
+        self._vline.set_xdata([self.playing_index, self.playing_index])
+        self.ax.draw_artist(self._vline)
+        self.canvas.blit(self.ax.bbox)
 
     def export_loop(self):
         """

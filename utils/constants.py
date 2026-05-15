@@ -55,7 +55,7 @@ SECRETS_FILE = "secrets.json"
 # Audio engine defaults
 
 STREAM_BLOCKSIZE = (
-    2048  # number of frames (frame is one sample per channel) per audio callback block.
+    2058  # number of frames (frame is one sample per channel) per audio callback block.
 )
 
 AMP_TOTAL = 0.55  # peak amplitude budget shared across all active tracks (0.0 – 1.0).

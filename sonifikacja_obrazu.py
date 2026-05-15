@@ -1,3 +1,5 @@
+# CZY SŁYCHAĆ CZASAMI "KLIKANIE"? WYNIKA ONO NAJPEWNIEJ Z NIECIĄGŁOŚCI - MOŻNA DODAĆ FADE IN / FADE OUT ŻEBY GO UNIKNĄĆ
+
 """
 sonifikacja_obrazu.py — real-time image sonification
 =====================================================
@@ -108,6 +110,12 @@ class SonifikacjaObrazu:
 
         self._build_ui()
         self.original_image = None
+        self._ui_refresh()
+
+    def _ui_refresh(self):
+        if hasattr(self, "_plot_bg"):   # guard: image may not be loaded yet
+            self._update_playhead()
+        self.root.after(5, self._ui_refresh)
 
     # ---------------------------------------------------------------- engine protocol
 
@@ -367,28 +375,37 @@ class SonifikacjaObrazu:
         self.ax = self.fig.add_subplot(111)
         self.canvas = FigureCanvasTkAgg(self.fig, master=right)
         self.canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+        self.canvas.mpl_connect("resize_event", lambda e: self._build_plot())
 
-    def update_plot(self):
-        """Redraw the image as a heatmap with a vertical playhead line."""
+    def _build_plot(self):
+        """Draw static content (image heatmap + grid lines) and save background for blitting."""
         self.ax.clear()
         if self.image_pixels is not None:
             self.ax.imshow(
-                self.image_pixels,
-                aspect="auto",
-                origin="lower",
-                cmap="gray",
-                vmin=0,
-                vmax=1,
+                self.image_pixels, aspect="auto", origin="lower",
+                cmap="gray", vmin=0, vmax=1,
             )
-        for y in range(self.image_pixels.shape[0]):
-            self.ax.axhline(y - 0.5, linewidth=0.3)
-        self.ax.axvline(self.playing_index, color="red", linestyle="--")
+            for y in range(self.image_pixels.shape[0]):
+                self.ax.axhline(y - 0.5, linewidth=0.3)
         self.ax.set(
             title="Obraz jako spektrogram",
-            xlabel="krok (czas)",
-            ylabel="rząd (wysokość dźwięku)",
+            xlabel="krok (czas)", ylabel="rząd (wysokość dźwięku)",
         )
-        self.canvas.draw_idle()
+        self.canvas.draw()
+        self._plot_bg = self.canvas.copy_from_bbox(self.ax.bbox)
+        self._vline = self.ax.axvline(self.playing_index, color="red",
+                                    linestyle="--", animated=True)
+
+    def update_plot(self):
+        """Alias so external callers (_load_image, _on_param_change) trigger a full rebuild."""
+        self._build_plot()
+
+    def _update_playhead(self):
+        """Blit only the vertical line — no full redraw."""
+        self.canvas.restore_region(self._plot_bg)
+        self._vline.set_xdata([self.playing_index, self.playing_index])
+        self.ax.draw_artist(self._vline)
+        self.canvas.blit(self.ax.bbox)
 
     def export_loop(self):
         """

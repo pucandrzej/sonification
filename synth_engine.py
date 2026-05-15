@@ -1,3 +1,5 @@
+# CZY SŁYCHAĆ CZASAMI "KLIKANIE"? WYNIKA ONO NAJPEWNIEJ Z NIECIĄGŁOŚCI - MOŻNA DODAĆ FADE IN / FADE OUT ŻEBY GO UNIKNĄĆ
+
 """
 synth_engine.py — shared real-time audio engine
 ================================================
@@ -19,6 +21,7 @@ The app object passed to ContinuousSynth must expose:
     - get_wave() -> str
 """
 
+import time
 import queue
 from dataclasses import dataclass
 
@@ -117,7 +120,6 @@ class ContinuousSynth:
         wave = app.get_wave()
         self._step_queue.put(Step(n_samples, tracks, wave, idx))
         app.index = (app.index + 1) % app.length
-        app.root.after(0, app.update_plot)
 
     # ---------------------------------------------------------------- Audio thread
 
@@ -193,7 +195,7 @@ class ContinuousSynth:
                     self._current = self._step_queue.get_nowait()
                     self._remaining = self._current.samples
                     self.app.playing_index = self._current.index
-                    self.app.root.after(0, self._enqueue_next)
+                    self.app.root.after_idle(self._enqueue_next)
                     note_str = (
                         "\n".join(
                             f"{n}: {freq:.1f} Hz | amp={amp:.2f}"
