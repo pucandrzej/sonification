@@ -21,7 +21,6 @@ The app object passed to ContinuousSynth must expose:
     - get_wave() -> str
 """
 
-import time
 import queue
 from dataclasses import dataclass
 
