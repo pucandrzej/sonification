@@ -2,7 +2,7 @@ import os
 
 #  AUDIO CONSTANTS
 
-PREFILL = 32  # number of steps to buffer ahead in producer-consumer logic
+PREFILL = 8  # number of steps to buffer ahead in producer-consumer logic
 
 FS = 44100
 C3 = 130.8

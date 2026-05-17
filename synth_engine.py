@@ -1,5 +1,10 @@
 # CZY SŁYCHAĆ CZASAMI "KLIKANIE"? WYNIKA ONO NAJPEWNIEJ Z NIECIĄGŁOŚCI - MOŻNA DODAĆ FADE IN / FADE OUT ŻEBY GO UNIKNĄĆ
 
+# CO WIĘCEJ, TERAZ W KODZIE WIDZIMY root.after_idle ORAZ root.after
+# IDEALNIE BYŁOBY KONTROLOWAĆ DODAWANIE NOWYCH PUNKTÓW TYLKO PO STRONIE UI,
+# WTEDY AUDIO JEST TYLKO KONSUMENTEM
+# (NIE WYMAGAM TEGO - JEST TO KOLEJNY KROK W STRONĘ "PRODUKCYJNEGO" ROZWIĄZANIA - PRAWDZIWE ROZWIĄZANIE NA PEWNO NIE BYŁOBY W PYTHONIE)
+
 """
 synth_engine.py — shared real-time audio engine
 ================================================
@@ -191,10 +196,10 @@ class ContinuousSynth:
         while pos < frames:
             if self._remaining <= 0:
                 try:
-                    self._current = self._step_queue.get_nowait()
+                    self._current = self._step_queue.get_nowait() # get_nowait is not waiting for data to appear in queue - get would :)
                     self._remaining = self._current.samples
                     self.app.playing_index = self._current.index
-                    self.app.root.after_idle(self._enqueue_next)
+                    self.app.root.after_idle(self._enqueue_next) # enqueue next after all currently pending GUI events finish
                     note_str = (
                         "\n".join(
                             f"{n}: {freq:.1f} Hz | amp={amp:.2f}"
@@ -226,7 +231,7 @@ class ContinuousSynth:
         """
         Drain the queue and refill it from the currently playing position.
 
-        Called on any UI parameter change.  Restarts from playing_index + 1
+        Called on any UI parameter change. Restarts from playing_index + 1
         so changes take effect on the very next step with no rewind artefact.
         No-op when the stream is stopped.
         """
