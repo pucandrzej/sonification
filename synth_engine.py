@@ -196,10 +196,12 @@ class ContinuousSynth:
         while pos < frames:
             if self._remaining <= 0:
                 try:
-                    self._current = self._step_queue.get_nowait() # get_nowait is not waiting for data to appear in queue - get would :)
+                    self._current = self._step_queue.get_nowait()  # get_nowait is not waiting for data to appear in queue - get would :)
                     self._remaining = self._current.samples
                     self.app.playing_index = self._current.index
-                    self.app.root.after_idle(self._enqueue_next) # enqueue next after all currently pending GUI events finish
+                    self.app.root.after_idle(
+                        self._enqueue_next
+                    )  # enqueue next after all currently pending GUI events finish
                     note_str = (
                         "\n".join(
                             f"{n}: {freq:.1f} Hz | amp={amp:.2f}"
